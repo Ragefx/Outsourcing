@@ -281,7 +281,7 @@ const STAGES = [
   { key: 'sent',          label: 'Sent to plant', reserves: true },
   { key: 'quoted',        label: 'Prices received', reserves: true },
   { key: 'approved',      label: 'Prices OK', reserves: true },
-  { key: 'ordered',       label: 'Orders opened', reserves: true },
+  { key: 'ordered',       label: 'Orders opened', reserves: false },
   { key: 'rejected',      label: 'Rejected', reserves: false },
 ];
 const RESERVING = new Set(STAGES.filter((s) => s.reserves).map((s) => s.key));
@@ -330,9 +330,10 @@ function toast(msg, bad = false) {
 /* ------------------------------------------------- capacity arithmetic */
 
 /**
- * Bucket everything by plant × month × order type. Volume already ordered
- * consumes the pipeline reservation in its own bucket first, so a batch we
- * placed and then opened as orders is never counted twice.
+ * Bucket everything by plant × month × order type. Ordered volume and
+ * pipeline volume are different work, so they add up. A batch is only ever
+ * both once its orders are opened at the plant, and that stage does not hold
+ * capacity — from then on the plant's own export is what counts it.
  */
 /**
  * Work that was due in an earlier month and is still open does not vanish:
@@ -381,7 +382,7 @@ function buildBuckets() {
 }
 
 function derive(b) {
-  const openReserved = Math.max(0, b.reserved - b.produced);
+  const openReserved = b.reserved;
   const used = b.produced + openReserved;
   const unmatched = b.offered === 0 && used > 0;
   return {
@@ -749,7 +750,7 @@ function pipelineView() {
     <div class="page-head">
       <div>
         <h1>Pipeline</h1>
-        <p>Every batch we are placing with a plant, from the first draft list through to orders opened in the system. Everything except rejected batches holds capacity.</p>
+        <p>Every batch we are placing with a plant, from the first draft list through to orders opened in the system. Each one holds capacity on the board until its orders are opened — after that the plant's own export counts it, so it is not counted twice.</p>
       </div>
       <button class="btn solid" data-act="add-batch">Add batch</button>
     </div>

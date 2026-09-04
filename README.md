@@ -33,18 +33,20 @@ Each bucket holds three numbers:
 | **In processing** | Batches in the pipeline, at any stage except *rejected*. |
 | **Ordered** | Work already ordered at the plant, loaded on *Import*. |
 
-A batch we reserved and have since ordered would otherwise be counted twice, so
-**ordered volume consumes the reservation in its own bucket first**:
+Ordered volume and pipeline volume are **different work, so they add up**:
 
 ```
-openReserved = max(0, reserved − ordered)
-used         = ordered + openReserved
-free         = max(0, offered − used)
-fill         = used / offered
+used = ordered + in processing
+free = max(0, offered − used)
+fill = used / offered
 ```
 
-So a plant that offered 200k, has 150k in the pipeline and 110k of it already
-ordered reads as 150k used, 50k free, 75% full — not 260k.
+A batch is only ever both once its orders are opened at the plant — and
+*Orders opened* deliberately holds no capacity of its own, because from that
+point the plant's export is what counts it. That is what keeps a batch from
+being counted twice, rather than netting the two totals against each other:
+netting compares sizes, not identities, so it silently cancels unrelated
+batches that happen to overlap in volume.
 
 Two rules follow from how the work actually behaves:
 

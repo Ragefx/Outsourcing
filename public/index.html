@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Outsourcing Tracker</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🏭</text></svg>" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">🏭</span> Outsourcing Tracker</div>
+    <nav class="tabs" id="tabs">
+      <button class="tab" data-view="overview">Overview</button>
+      <button class="tab" data-view="pipeline">Pipeline</button>
+      <button class="tab" data-view="capacity">Offered capacity</button>
+      <button class="tab" data-view="production">Production</button>
+      <button class="tab" data-view="plants">Plants</button>
+      <button class="tab" data-view="import">Import</button>
+    </nav>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title"></h2>
+        <button class="icon-btn" id="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Capacity and order tracking across partner plants." />
+<title>Plant Load Board</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🏭</text></svg>" />
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<title>Plant Load Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
+<style>
+:root {
+  --ground: #f0f2f1;
+  --surface: #ffffff;
+  --surface-sunk: #f7f8f8;
+  --line: #dfe3e2;
+  --line-strong: #c3c9c8;
+  --ink: #11201d;
+  --ink-soft: #55625f;
+  --ink-faint: #8a9491;
+  --chrome: #1d2c29;
+  --chrome-ink: #f4f6f5;
+  --focus: #2f5f96;
+
+  --produced: #1c6b5a;
+  --produced-soft: #e3efeb;
+  --reserved: #c8871f;
+  --reserved-soft: #faf0dd;
+  --free: #dfe3e2;
+  --over: #b3403a;
+  --over-soft: #f8e9e8;
+
+  --r: 6px;
+  --shadow: 0 1px 2px rgba(17, 32, 29, .05);
+  --sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0e1614;
+    --surface: #161f1d;
+    --surface-sunk: #121b19;
+    --line: #263230;
+    --line-strong: #3a4845;
+    --ink: #e8edeb;
+    --ink-soft: #9aa8a4;
+    --ink-faint: #6d7b78;
+    --chrome: #0a1211;
+    --chrome-ink: #e8edeb;
+    --focus: #7aa9dd;
+    --produced: #3f9e83;
+    --produced-soft: #16302a;
+    --reserved: #d9a24a;
+    --reserved-soft: #33280f;
+    --free: #2b3634;
+    --over: #d4645d;
+    --over-soft: #351c1b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0e1614;
+  --surface: #161f1d;
+  --surface-sunk: #121b19;
+  --line: #263230;
+  --line-strong: #3a4845;
+  --ink: #e8edeb;
+  --ink-soft: #9aa8a4;
+  --ink-faint: #6d7b78;
+  --chrome: #0a1211;
+  --chrome-ink: #e8edeb;
+  --focus: #7aa9dd;
+  --produced: #3f9e83;
+  --produced-soft: #16302a;
+  --reserved: #d9a24a;
+  --reserved-soft: #33280f;
+  --free: #2b3634;
+  --over: #d4645d;
+  --over-soft: #351c1b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -.015em; text-wrap: balance; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-family: var(--mono); font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); }
+.soft { color: var(--ink-soft); }
+.faint { color: var(--ink-faint); }
+.spacer { flex: 1; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- chrome */
+.topbar { position: sticky; top: 0; z-index: 30; background: var(--chrome); color: var(--chrome-ink); }
+.topbar-inner { max-width: 1380px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 9px; padding: 13px 0; font-weight: 600; letter-spacing: -.02em; font-size: 15px; white-space: nowrap; }
+.brand .tag { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; opacity: .55; }
+nav.tabs { display: flex; gap: 0; flex-wrap: wrap; }
+.tab { background: none; border: 0; padding: 15px 13px 12px; color: rgba(244,246,245,.6); cursor: pointer; font-weight: 500; border-bottom: 2px solid transparent; }
+.tab:hover { color: var(--chrome-ink); }
+.tab[aria-current="page"] { color: var(--chrome-ink); border-bottom-color: var(--reserved); }
+.conn { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; opacity: .75; }
+.conn .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--reserved); }
+.conn.live .dot { background: var(--produced); }
+.conn.local .dot { background: var(--ink-faint); }
+.conn.off .dot { background: var(--over); }
+
+main { max-width: 1380px; margin: 0 auto; padding: 22px 20px 72px; }
+.page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; }
+.page-head h1 { font-size: 22px; }
+.page-head p { margin: 5px 0 0; color: var(--ink-soft); max-width: 62ch; }
+
+/* --------------------------------------------------------------- controls */
+.btn { font-family: var(--sans); font-weight: 500; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: var(--r); padding: 7px 13px; cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--ink-faint); }
+.btn.solid { background: var(--chrome); border-color: var(--chrome); color: var(--chrome-ink); }
+.btn.solid:hover { opacity: .88; }
+.btn.small { padding: 4px 9px; font-size: 12.5px; }
+.btn.quiet { border-color: transparent; background: none; color: var(--ink-soft); }
+.btn.quiet:hover { background: var(--surface-sunk); color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.danger { color: var(--over); border-color: var(--line-strong); }
+
+input, select, textarea { border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r); padding: 6px 8px; width: 100%; }
+textarea { font-family: var(--mono); font-size: 12.5px; resize: vertical; }
+label.f { display: flex; flex-direction: column; gap: 4px; }
+label.f > span { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); }
+.f-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 11px; align-items: end; }
+.check { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+.check input { width: auto; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+.panel-pad { padding: 14px 16px; }
+.bar-strip { display: flex; gap: 11px; align-items: end; flex-wrap: wrap; }
+
+/* ------------------------------------------------------------- totals */
+.totals { display: flex; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 20px; overflow: hidden; }
+.total { flex: 1 1 150px; padding: 13px 16px; border-right: 1px solid var(--line); }
+.total:last-child { border-right: 0; }
+.total .v { font-family: var(--mono); font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; margin-top: 2px; }
+.total .u { font-size: 12px; color: var(--ink-faint); }
+.total.produced .v { color: var(--produced); }
+.total.reserved .v { color: var(--reserved); }
+.total.over .v { color: var(--over); }
+.total.carried .v { color: var(--reserved); }
+
+/* --------------------------------------------------------------- board */
+.legend { display: flex; gap: 13px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sw { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.sw.produced { background: var(--produced); }
+.sw.reserved { background: var(--reserved); }
+.sw.free { background: var(--free); border: 1px solid var(--line-strong); }
+.sw.over { background: var(--over); }
+
+.board { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.plant-row { border-bottom: 1px solid var(--line); padding: 15px 18px; display: grid; gap: 12px; }
+.plant-row:last-child { border-bottom: 0; }
+.plant-row.over { background: linear-gradient(90deg, var(--over-soft), transparent 46%); }
+.plant-head { display: grid; grid-template-columns: minmax(150px, 1.1fr) minmax(200px, 3fr) auto; gap: 18px; align-items: center; }
+.plant-id .name { font-weight: 600; font-size: 15px; letter-spacing: -.01em; }
+.plant-id .meta { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .06em; }
+.plant-fig { text-align: right; display: flex; align-items: baseline; gap: 10px; justify-content: flex-end; }
+.plant-fig .pctv { font-family: var(--mono); font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.plant-fig .of { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); }
+.plant-fig .carry, .bd .carry { color: var(--reserved); }
+.pctv.warn { color: var(--reserved); }
+.pctv.full { color: var(--produced); }
+.pctv.overs { color: var(--over); }
+
+.bar { position: relative; display: flex; height: 16px; border-radius: 3px; background: var(--free); overflow: hidden; }
+.bar.thin { height: 8px; border-radius: 2px; }
+.bar i { display: block; height: 100%; }
+.bar i.produced { background: var(--produced); }
+.bar i.reserved { background: var(--reserved); }
+.bar i.over { background: repeating-linear-gradient(45deg, var(--over) 0 4px, color-mix(in srgb, var(--over) 62%, #fff) 4px 8px); }
+.bar .tick { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--ink); opacity: .5; }
+
+.breakdown { display: grid; gap: 6px; padding-left: 2px; }
+.bd { display: grid; grid-template-columns: minmax(120px, 168px) minmax(120px, 3fr) minmax(150px, 178px); gap: 14px; align-items: center; }
+.bd .k { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 7px; }
+.bd .v { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); text-align: right; white-space: nowrap; }
+.bd .carry { color: var(--reserved); margin-left: 7px; }
+.type-dot { width: 7px; height: 7px; border-radius: 1px; flex: none; }
+.type-dot.diecut { background: var(--ink-faint); }
+.type-dot.inline { background: var(--ink-soft); border-radius: 50%; }
+.type-dot.unspecified { background: transparent; border: 1px solid var(--line-strong); border-radius: 50%; }
+.plant-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* -------------------------------------------------------------- tables */
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { text-align: left; padding: 8px 13px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); font-weight: 500; background: var(--surface-sunk); }
+tbody tr:hover { background: var(--surface-sunk); }
+td.r, th.r { text-align: right; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td select { padding: 3px 6px; min-width: 132px; font-size: 12.5px; }
+
+.chip { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 3px; border: 1px solid var(--line-strong); color: var(--ink-soft); }
+.chip.stage-ordered { background: var(--produced-soft); border-color: transparent; color: var(--produced); }
+.chip.stage-rejected { background: var(--over-soft); border-color: transparent; color: var(--over); }
+
+/* -------------------------------------------------------------- states */
+.empty { padding: 46px 24px; text-align: center; color: var(--ink-soft); display: grid; gap: 12px; justify-items: center; }
+.empty h2 { font-size: 16px; color: var(--ink); }
+.empty p { margin: 0; max-width: 46ch; }
+.notice.quiet-notice { background: var(--surface); border-color: var(--line); color: var(--ink-soft); }
+.notice { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: var(--r); background: var(--reserved-soft); border: 1px solid color-mix(in srgb, var(--reserved) 32%, transparent); margin-bottom: 16px; font-size: 13px; }
+
+/* -------------------------------------------------------------- import */
+.import-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.rep { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dotted var(--line); font-size: 13px; }
+.rep:last-of-type { border-bottom: 0; }
+.rep b { font-family: var(--mono); }
+ul.errs { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+ul.errs li { background: var(--over-soft); border-radius: 4px; padding: 6px 9px; font-size: 12px; }
+code { font-family: var(--mono); font-size: 12px; background: var(--surface-sunk); padding: 1px 5px; border-radius: 3px; }
+
+/* --------------------------------------------------------------- modal */
+.scrim[hidden] { display: none; }
+.scrim { position: fixed; inset: 0; background: rgba(10, 18, 17, .5); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; z-index: 60; }
+.modal { background: var(--surface); border-radius: 8px; width: min(540px, 100%); max-height: 84vh; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(10, 18, 17, .3); }
+.modal header { display: flex; align-items: center; justify-content: space-between; padding: 14px 17px; border-bottom: 1px solid var(--line); }
+.modal header h2 { font-size: 15px; }
+.modal .body { padding: 17px; overflow: auto; display: grid; gap: 12px; }
+.modal .acts { display: flex; gap: 8px; justify-content: flex-end; padding-top: 3px; }
+
+/* -------------------------------------------------------------- toasts */
+.toasts { position: fixed; right: 16px; bottom: 16px; display: grid; gap: 8px; z-index: 90; }
+.toast { background: var(--chrome); color: var(--chrome-ink); padding: 9px 14px; border-radius: var(--r); font-size: 13px; max-width: 360px; box-shadow: 0 6px 20px rgba(10, 18, 17, .22); }
+.toast.bad { background: var(--over); color: #fff; }
+
+@media (max-width: 880px) {
+  .plant-head { grid-template-columns: 1fr; gap: 9px; }
+  .plant-fig { justify-content: flex-start; }
+  .bd { grid-template-columns: 110px 1fr; }
+  .bd .v { grid-column: 2; text-align: left; }
+  .import-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Plant Load Board <span class="tag">Outsourcing</span></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab" data-view="board">Board</button>
+      <button class="tab" data-view="pipeline">Pipeline</button>
+      <button class="tab" data-view="capacity">Offers</button>
+      <button class="tab" data-view="production">Orders</button>
+      <button class="tab" data-view="plants">Plants</button>
+      <button class="tab" data-view="import">Import</button>
+    </nav>
+    <span class="spacer"></span>
+    <div class="conn" id="conn"><span class="dot"></span><span id="conn-text">Connecting</span></div>
+  </div>
+</div>
+
+<main id="view"></main>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <header><h2 id="modal-title"></h2><button class="btn quiet small" id="modal-x" aria-label="Close">Close</button></header>
+    <div class="body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ===================================================================
+   Plant Load Board — outsourced capacity across partner plants.
+   Data lives in the artifact's shared store, so everyone who opens
+   this page sees the same board, live. Without the store the page
+   still works for the session, in memory only.
+   =================================================================== */
+
+const ORDER_TYPES = ['diecut', 'inline'];
+const UNSPEC = 'unspecified';
+const STAGES = [
+  { key: 'list_prepared', label: 'List prepared', reserves: true },
+  { key: 'sent',          label: 'Sent to plant', reserves: true },
+  { key: 'quoted',        label: 'Prices received', reserves: true },
+  { key: 'approved',      label: 'Prices OK', reserves: true },
+  { key: 'ordered',       label: 'Orders opened', reserves: true },
+  { key: 'rejected',      label: 'Rejected', reserves: false },
+];
+const RESERVING = new Set(STAGES.filter((s) => s.reserves).map((s) => s.key));
+const stageLabel = (k) => STAGES.find((s) => s.key === k)?.label || k;
+
+const state = {
+  view: 'board',
+  db: null,
+  mode: 'shared',   // shared store, this browser's storage, or neither
+  connection: 'connecting',
+  plants: new Map(), offers: new Map(), allocations: new Map(), batches: new Map(),
+  filter: { period: '', orderType: '' },
+  pipeFilter: { plantId: '', status: '', orderType: '' },
+  draft: { csv: '', report: null, createPlants: true, defaultType: '' },
+};
+
+/* ------------------------------------------------------------ helpers */
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `id${Date.now()}${Math.random().toString(36).slice(2)}`);
+const nf = new Intl.NumberFormat('en-US');
+const sqmText = (n) => `${nf.format(Math.round(n || 0))} m²`;
+const short = (n) => {
+  const v = Math.round(n || 0);
+  if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(v % 1e6 ? 2 : 0)}M`;
+  if (Math.abs(v) >= 1e4) return `${Math.round(v / 1e3)}k`;
+  if (Math.abs(v) >= 1e3) return `${(v / 1e3).toFixed(1)}k`;
+  return nf.format(v);
+};
+const pctText = (n) => `${Math.round((n || 0) * 100)}%`;
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const monthName = (p) => (/^\d{4}-\d{2}$/.test(p) ? `${MONTHS[Number(p.slice(5, 7)) - 1]} ${p.slice(0, 4)}` : p);
+const monthShort = (p) => (/^\d{4}-\d{2}$/.test(p) ? `${MONTHS[Number(p.slice(5, 7)) - 1].slice(0, 3)} ${p.slice(2, 4)}` : p);
+const thisMonth = () => new Date().toISOString().slice(0, 7);
+const typeName = (t) => (t === 'diecut' ? 'Diecut' : t === 'inline' ? 'Inline' : 'No type');
+const plantName = (id) => state.plants.get(id)?.name || 'Unknown plant';
+
+function toast(msg, bad = false) {
+  const el = document.createElement('div');
+  el.className = `toast${bad ? ' bad' : ''}`;
+  el.textContent = msg;
+  document.getElementById('toasts').append(el);
+  setTimeout(() => el.remove(), bad ? 6000 : 3200);
+}
+
+/* ------------------------------------------------- capacity arithmetic */
+
+/**
+ * Bucket everything by plant × month × order type. Volume already ordered
+ * consumes the pipeline reservation in its own bucket first, so a batch we
+ * placed and then opened as orders is never counted twice.
+ */
+/**
+ * Work that was due in an earlier month and is still open does not vanish:
+ * it is carried into the current month, because that is when the plant will
+ * actually have to run it. An offer, by contrast, expires with its month —
+ * capacity we did not use in August cannot be filled in September.
+ */
+const rollForward = (period, current) => (period && period < current ? current : period);
+
+function buildBuckets() {
+  const current = thisMonth();
+  const map = new Map();
+  const at = (p, m, t) => {
+    const k = `${p}|${m}|${t}`;
+    if (!map.has(k)) map.set(k, { plantId: p, period: m, orderType: t, offered: 0, reserved: 0, produced: 0, carried: 0 });
+    return map.get(k);
+  };
+  const keep = (plantId, period, orderType) =>
+    (!state.filter.period || period === state.filter.period) &&
+    (!state.filter.orderType || orderType === state.filter.orderType) &&
+    state.plants.has(plantId);
+
+  for (const o of state.offers.values()) {
+    if (o.period < current) continue;
+    if (keep(o.plantId, o.period, o.orderType)) at(o.plantId, o.period, o.orderType).offered += Number(o.sqm) || 0;
+  }
+  for (const a of state.allocations.values()) {
+    if (!RESERVING.has(a.status)) continue;
+    const period = rollForward(a.period, current);
+    if (!keep(a.plantId, period, a.orderType)) continue;
+    const bucket = at(a.plantId, period, a.orderType);
+    const sqm = Number(a.sqm) || 0;
+    bucket.reserved += sqm;
+    if (a.period < current) bucket.carried += sqm;
+  }
+  for (const row of productionRows()) {
+    const own = String(row.date).slice(0, 7);
+    const period = rollForward(own, current);
+    if (!keep(row.plantId, period, row.orderType)) continue;
+    const bucket = at(row.plantId, period, row.orderType);
+    const sqm = Number(row.sqm) || 0;
+    bucket.produced += sqm;
+    if (own < current) bucket.carried += sqm;
+  }
+  return [...map.values()].map(derive);
+}
+
+function derive(b) {
+  const openReserved = Math.max(0, b.reserved - b.produced);
+  const used = b.produced + openReserved;
+  const unmatched = b.offered === 0 && used > 0;
+  return {
+    ...b, openReserved, used, unmatched, carried: b.carried || 0,
+    free: Math.max(0, b.offered - used),
+    over: unmatched ? 0 : Math.max(0, used - b.offered),
+    fill: b.offered > 0 ? used / b.offered : 0,
+  };
+}
+
+function totalOf(buckets, seed = {}) {
+  const s = buckets.reduce((acc, b) => {
+    acc.offered += b.offered; acc.reserved += b.reserved;
+    acc.produced += b.produced; acc.openReserved += b.openReserved;
+    acc.carried += b.carried || 0;
+    return acc;
+  }, { offered: 0, reserved: 0, produced: 0, openReserved: 0, carried: 0 });
+  const used = s.produced + s.openReserved;
+  const unmatched = s.offered === 0 && used > 0;
+  return {
+    ...seed, ...s, used, unmatched,
+    free: Math.max(0, s.offered - used),
+    over: unmatched ? 0 : Math.max(0, used - s.offered),
+    fill: s.offered > 0 ? used / s.offered : 0,
+  };
+}
+
+/** Orders are stored in per-import batch documents; flatten for maths. */
+function productionRows() {
+  const out = [];
+  for (const [batchId, batch] of state.batches) {
+    (batch.rows || []).forEach((r, i) => out.push({ ...r, batchId, index: i }));
+  }
+  return out;
+}
+
+const knownPeriods = () => {
+  const current = thisMonth();
+  return [...new Set([
+    ...[...state.offers.values()].map((o) => o.period),
+    ...[...state.allocations.values()].map((a) => rollForward(a.period, current)),
+    ...productionRows().map((r) => rollForward(String(r.date).slice(0, 7), current)),
+  ])].filter((p) => p && p >= current).sort();
+};
+
+/* ------------------------------------------------------------- storage */
+
+/**
+ * Every write goes to the shared store when it is available and to the
+ * in-memory maps either way, so the page behaves the same offline —
+ * it just forgets when reloaded.
+ */
+const COLLECTIONS = { plants: 'plants', offers: 'offers', allocations: 'allocations', batches: 'production' };
+const KINDS = Object.keys(COLLECTIONS);
+const LOCAL_KEY = 'plant-load-board/v1';
+
+/**
+ * Served from claude.ai the board keeps its data in the shared store, so
+ * everyone sees the same thing. Served as a plain page — GitHub Pages, a file
+ * on disk — there is no server, so it falls back to this browser's own
+ * storage: the same board, but private to this browser until you move it with
+ * Export and Restore.
+ */
+function saveLocal() {
+  if (state.mode !== 'local') return;
+  try {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(boardData()));
+  } catch (err) {
+    state.mode = 'memory';
+    setConnection('offline', 'Not saved');
+    toast('This browser refused to save the board — check that site data is allowed.', true);
+  }
+}
+
+function boardData() {
+  return Object.fromEntries(KINDS.map((kind) => [kind, [...state[kind].values()]]));
+}
+
+function applyBoardData(data) {
+  for (const kind of KINDS) {
+    state[kind] = new Map((data[kind] || []).filter((r) => r && r.id).map((r) => [r.id, r]));
+  }
+}
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) applyBoardData(JSON.parse(raw));
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function put(kind, id, body) {
+  state[kind].set(id, { ...body, id });
+  render();
+  if (!state.db) return saveLocal();
+  try {
+    await state.db.doc(`${COLLECTIONS[kind]}/${id}`).set(body);
+  } catch (err) {
+    toast(storeMessage(err, 'Could not save'), true);
+  }
+}
+
+async function patch(kind, id, changes) {
+  const current = state[kind].get(id);
+  if (!current) return;
+  state[kind].set(id, { ...current, ...changes });
+  render();
+  if (!state.db) return saveLocal();
+  try {
+    await state.db.doc(`${COLLECTIONS[kind]}/${id}`).update(changes);
+  } catch (err) {
+    toast(storeMessage(err, 'Could not save the change'), true);
+  }
+}
+
+async function drop(kind, id) {
+  state[kind].delete(id);
+  render();
+  if (!state.db) return saveLocal();
+  try {
+    await state.db.doc(`${COLLECTIONS[kind]}/${id}`).delete();
+  } catch (err) {
+    toast(storeMessage(err, 'Could not delete'), true);
+  }
+}
+
+function storeMessage(err, prefix) {
+  const code = err && err.code;
+  if (code === 'quota_exceeded') return `${prefix}: the board is full. Delete some old imports first.`;
+  if (code === 'resource_exhausted') return `${prefix}: too many changes at once. Wait a moment and try again.`;
+  if (code === 'revoked' || code === 'not_granted') return `${prefix}: you no longer have edit access to this board.`;
+  if (code === 'invalid_argument') return `${prefix}: this board is read-only for you.`;
+  return `${prefix}. ${err && err.message ? err.message : 'Please try again.'}`;
+}
+
+/* --------------------------------------------------------- CSV parsing */
+
+function detectDelimiter(text) {
+  const line = text.split(/\r?\n/).find((l) => l.trim()) || '';
+  const ranked = [',', ';', '\t'].map((d) => [d, line.split(d).length]).sort((a, b) => b[1] - a[1]);
+  return ranked[0][1] > 1 ? ranked[0][0] : ',';
+}
+
+function parseCsv(text) {
+  const delimiter = detectDelimiter(text);
+  const rows = []; let row = []; let field = ''; let quoted = false;
+  const src = text.replace(/^﻿/, '');
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (quoted) {
+      if (ch === '"') { if (src[i + 1] === '"') { field += '"'; i++; } else quoted = false; }
+      else field += ch;
+      continue;
+    }
+    if (ch === '"') { quoted = true; continue; }
+    if (ch === delimiter) { row.push(field); field = ''; continue; }
+    if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; continue; }
+    if (ch === '\r') continue;
+    field += ch;
+  }
+  row.push(field); rows.push(row);
+  return rows.filter((r) => r.some((c) => c.trim() !== ''));
+}
+
+const norm = (s) => String(s).trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+const ALIASES = {
+  plant: ['plant', 'factory', 'supplier', 'country', 'plantname', 'location', 'site'],
+  orderType: ['type', 'ordertype', 'production', 'process', 'kind'],
+  sqm: ['sqm', 'm2', 'squaremeters', 'squaremetres', 'quantity', 'qty', 'area'],
+  date: ['date', 'productiondate', 'deliverydate', 'week', 'month', 'period'],
+  reference: ['reference', 'ref', 'order', 'ordernumber', 'orderno', 'job', 'item'],
+};
+
+function mapHeaders(header) {
+  const map = {};
+  header.forEach((raw, i) => {
+    const k = norm(raw);
+    for (const [f, list] of Object.entries(ALIASES)) if (map[f] === undefined && list.includes(k)) map[f] = i;
+  });
+  return map;
+}
+
+function parseSqm(value) {
+  let t = String(value).trim().toLowerCase().replace(/\s|m2|sqm|㎡/g, '');
+  let mult = 1;
+  if (/[km]$/.test(t)) { mult = t.endsWith('k') ? 1e3 : 1e6; t = t.slice(0, -1); }
+  if (t.includes(',') && t.includes('.')) {
+    t = t.lastIndexOf(',') > t.lastIndexOf('.') ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  } else if (t.includes(',')) {
+    t = /,\d{3}$/.test(t) ? t.replace(/,/g, '') : t.replace(',', '.');
+  }
+  const n = Number(t);
+  return Number.isFinite(n) ? n * mult : NaN;
+}
+
+const MON3 = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+function parseDate(value) {
+  const t = String(value).trim();
+  if (!t) return null;
+  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = t.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-01`;
+  m = t.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+  if (m) return `${m[3].length === 2 ? `20${m[3]}` : m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
+  m = t.toLowerCase().match(/^([a-z]{3,})[\s-]*(\d{2,4})?$/);
+  if (m) {
+    const idx = MON3.indexOf(m[1].slice(0, 3));
+    if (idx >= 0) {
+      const y = m[2] ? (m[2].length === 2 ? `20${m[2]}` : m[2]) : String(new Date().getFullYear());
+      return `${y}-${String(idx + 1).padStart(2, '0')}-01`;
+    }
+  }
+  return null;
+}
+
+function parseType(value) {
+  const k = norm(value);
+  if (k.includes('die') || k === 'dc') return 'diecut';
+  if (k.includes('inline') || k === 'il') return 'inline';
+  return null;
+}
+</script>
+
+<script>
+/* ------------------------------------------------------------ controls */
+
+const opts = (items, sel) => items.map((o) => `<option value="${esc(o.value)}"${o.value === sel ? ' selected' : ''}>${esc(o.label)}</option>`).join('');
+const sortedPlants = () => [...state.plants.values()].sort((a, b) => a.name.localeCompare(b.name));
+const plantOpts = (sel, all) => opts([...(all ? [{ value: '', label: 'All plants' }] : []), ...sortedPlants().map((p) => ({ value: p.id, label: p.name }))], sel);
+const typeOpts = (sel, all) => opts([...(all ? [{ value: '', label: 'Both types' }] : []), ...ORDER_TYPES.map((t) => ({ value: t, label: typeName(t) }))], sel);
+const stageOpts = (sel, all) => opts([...(all ? [{ value: '', label: 'Any stage' }] : []), ...STAGES.map((s) => ({ value: s.key, label: s.label }))], sel);
+const periodOpts = (sel) => opts([{ value: '', label: 'All months' }, ...knownPeriods().map((p) => ({ value: p, label: monthName(p) }))], sel);
+const fld = (label, control) => `<label class="f"><span>${esc(label)}</span>${control}</label>`;
+
+function bar(b, thin) {
+  const scale = Math.max(b.offered, b.used) || 1;
+  const room = b.unmatched ? b.used : (b.offered || 0);
+  const inProduced = Math.min(b.produced, room);
+  const inReserved = Math.min(b.openReserved, Math.max(0, room - b.produced));
+  const seg = (v, cls) => (v > 0 ? `<i class="${cls}" style="width:${(v / scale) * 100}%"></i>` : '');
+  const tick = b.over > 0 && b.offered > 0 ? `<span class="tick" style="left:${(b.offered / scale) * 100}%"></span>` : '';
+  const carry = b.carried > 0 ? ` · includes ${sqmText(b.carried)} carried over from earlier months` : '';
+  const title = (b.unmatched
+    ? `Ordered ${sqmText(b.produced)} · In processing ${sqmText(b.openReserved)} · no offer recorded for this type`
+    : `Offered ${sqmText(b.offered)} · Ordered ${sqmText(b.produced)} · In processing ${sqmText(b.openReserved)} · ${b.over > 0 ? `Over by ${sqmText(b.over)}` : `Free ${sqmText(b.free)}`}`) + carry;
+  return `<div class="bar${thin ? ' thin' : ''}" title="${esc(title)}">${seg(inProduced, 'produced')}${seg(inReserved, 'reserved')}${seg(b.over, 'over')}${tick}</div>`;
+}
+
+const fillClass = (b) => (b.over > 0 ? 'overs' : b.fill >= 0.95 ? 'full' : b.fill >= 0.75 ? 'warn' : '');
+
+/* --------------------------------------------------------------- board */
+
+function boardView() {
+  const buckets = buildBuckets();
+  const t = totalOf(buckets);
+  const byPlant = new Map();
+  for (const b of buckets) {
+    if (!byPlant.has(b.plantId)) byPlant.set(b.plantId, []);
+    byPlant.get(b.plantId).push(b);
+  }
+  const rows = sortedPlants()
+    .map((plant) => ({ plant, buckets: (byPlant.get(plant.id) || []).filter((b) => b.offered || b.used), ...totalOf(byPlant.get(plant.id) || []) }))
+    .sort((a, b) => b.fill - a.fill || b.used - a.used || a.plant.name.localeCompare(b.plant.name));
+
+  if (!state.plants.size) return emptyBoard();
+
+  return `
+    <div class="page-head">
+      <div>
+        <h1>Capacity overview</h1>
+        <p>How full each partner plant is against the volume it offered us. Green is already ordered, amber is what we are still placing. Anything left open from earlier months is carried into ${esc(monthName(thisMonth()))}.</p>
+      </div>
+      <div class="bar-strip">
+        ${fld('Month', `<select data-filter="period">${periodOpts(state.filter.period)}</select>`)}
+        ${fld('Order type', `<select data-filter="orderType">${typeOpts(state.filter.orderType, true)}</select>`)}
+        <button class="btn solid" data-act="add-batch">Add to pipeline</button>
+      </div>
+    </div>
+
+    <div class="totals">
+      <div class="total"><div class="eyebrow">Offered</div><div class="v">${short(t.offered)}</div><div class="u">m² across ${state.plants.size} plant${state.plants.size === 1 ? '' : 's'}</div></div>
+      <div class="total produced"><div class="eyebrow">Ordered</div><div class="v">${short(t.produced)}</div><div class="u">m² already ordered</div></div>
+      <div class="total reserved"><div class="eyebrow">In processing</div><div class="v">${short(t.openReserved)}</div><div class="u">m² in the pipeline</div></div>
+      <div class="total"><div class="eyebrow">Still free</div><div class="v">${short(t.free)}</div><div class="u">m² we can still place</div></div>
+      ${t.carried > 0 ? `<div class="total carried"><div class="eyebrow">Carried over</div><div class="v">${short(t.carried)}</div><div class="u">m² late, moved into ${esc(monthShort(thisMonth()))}</div></div>` : ''}
+      <div class="total ${t.over > 0 ? 'over' : ''}"><div class="eyebrow">Utilisation</div><div class="v">${t.offered ? pctText(t.fill) : '—'}</div><div class="u">${t.offered ? (t.over > 0 ? `over by ${short(t.over)} m²` : 'of offered capacity') : 'no offers recorded yet'}</div></div>
+    </div>
+
+    <div class="row" style="margin-bottom:9px">
+      <div class="eyebrow">Plants by load</div>
+      <span class="spacer"></span>
+      <div class="legend">
+        <span><i class="sw produced"></i>Ordered</span>
+        <span><i class="sw reserved"></i>In processing</span>
+        <span><i class="sw free"></i>Free</span>
+        <span><i class="sw over"></i>Over offer</span>
+      </div>
+    </div>
+    <div class="board">${rows.map(plantRow).join('')}</div>`;
+}
+
+function plantRow(entry) {
+  const { plant } = entry;
+  const detail = entry.buckets.length
+    ? `<div class="breakdown">${entry.buckets
+        .sort((a, b) => a.period.localeCompare(b.period) || a.orderType.localeCompare(b.orderType))
+        .map((b) => `
+          <div class="bd">
+            <span class="k"><i class="type-dot ${b.orderType}"></i>${esc(monthShort(b.period))} · ${typeName(b.orderType)}</span>
+            ${bar(b, true)}
+            <span class="v">${b.unmatched ? `${short(b.used)} · no offer set` : `${short(b.used)} / ${short(b.offered)}${b.over > 0 ? ` +${short(b.over)} over` : ''}`}${b.carried > 0 ? `<span class="carry" title="Carried over from earlier months">↩${short(b.carried)}</span>` : ''}</span>
+          </div>`).join('')}</div>`
+    : `<div class="faint" style="font-size:12.5px">Nothing offered or booked${state.filter.period || state.filter.orderType ? ' in this view' : ' yet'}.</div>`;
+
+  return `
+    <div class="plant-row${entry.over > 0 ? ' over' : ''}">
+      <div class="plant-head">
+        <div class="plant-id">
+          <div class="name">${esc(plant.name)}</div>
+          <div class="meta">${esc(plant.country || 'No country')}${plant.active === false ? ' · inactive' : ''}</div>
+        </div>
+        ${bar(entry)}
+        <div class="plant-fig">
+          <span class="pctv ${fillClass(entry)}">${entry.offered ? pctText(entry.fill) : '—'}</span>
+          <span class="of">${entry.offered ? `${short(entry.used)} / ${short(entry.offered)} m²` : `${short(entry.used)} m² · no offer set`}${entry.carried > 0 ? `<span class="carry" title="Late work moved into this month"> ↩${short(entry.carried)}</span>` : ''}</span>
+        </div>
+      </div>
+      ${detail}
+      <div class="plant-tools">
+        <button class="btn small" data-act="add-batch" data-plant="${plant.id}">+ In processing</button>
+        <button class="btn small" data-act="add-offer" data-plant="${plant.id}">+ Offer</button>
+        <button class="btn small quiet" data-act="see-pipeline" data-plant="${plant.id}">See pipeline</button>
+      </div>
+    </div>`;
+}
+
+function emptyBoard() {
+  return `
+    <div class="page-head"><div><h1>Capacity overview</h1><p>Nothing on the board yet.</p></div></div>
+    <div class="panel empty">
+      <h2>Start with the plants that offered to help</h2>
+      <p>Add a plant, record what it offered — quantity, order type and month — then track the batches you place with it. Orders already at the plants come in on the Import tab.</p>
+      <div class="row" style="justify-content:center">
+        <button class="btn solid" data-act="add-plant">Add a plant</button>
+        <button class="btn" data-act="load-example">Load example data</button>
+      </div>
+      <p class="faint" style="font-size:12.5px">The example fills the board with four made-up plants so you can see how it works. You can clear it again from the Plants tab.</p>
+    </div>`;
+}
+
+/* ------------------------------------------------------------ pipeline */
+
+function pipelineView() {
+  const f = state.pipeFilter;
+  const rows = [...state.allocations.values()]
+    .filter((a) => (!f.plantId || a.plantId === f.plantId) && (!f.status || a.status === f.status) && (!f.orderType || a.orderType === f.orderType))
+    .sort((a, b) => b.period.localeCompare(a.period) || (b.createdAt || '').localeCompare(a.createdAt || ''));
+  const reserved = rows.filter((a) => RESERVING.has(a.status)).reduce((s, a) => s + a.sqm, 0);
+
+  return `
+    <div class="page-head">
+      <div>
+        <h1>Pipeline</h1>
+        <p>Every batch we are placing with a plant, from the first draft list through to orders opened in the system. Everything except rejected batches holds capacity.</p>
+      </div>
+      <button class="btn solid" data-act="add-batch">Add batch</button>
+    </div>
+    <div class="panel panel-pad" style="margin-bottom:14px">
+      <div class="bar-strip">
+        ${fld('Plant', `<select data-pipe="plantId">${plantOpts(f.plantId, true)}</select>`)}
+        ${fld('Stage', `<select data-pipe="status">${stageOpts(f.status, true)}</select>`)}
+        ${fld('Order type', `<select data-pipe="orderType">${typeOpts(f.orderType, true)}</select>`)}
+        <span class="spacer"></span>
+        <div><div class="eyebrow">Holding capacity</div><div class="mono" style="font-size:17px;font-weight:600">${sqmText(reserved)}</div></div>
+      </div>
+    </div>
+    ${rows.length ? `<div class="panel scroll"><table>
+      <thead><tr><th>Plant</th><th>Type</th><th>Month</th><th class="r">Quantity</th><th>Stage</th><th>Reference</th><th class="r">Price</th><th>Note</th><th></th></tr></thead>
+      <tbody>${rows.map((a) => `
+        <tr>
+          <td>${esc(plantName(a.plantId))}</td>
+          <td><span class="chip">${typeName(a.orderType)}</span></td>
+          <td class="num">${esc(monthName(a.period))}</td>
+          <td class="r num">${sqmText(a.sqm)}</td>
+          <td><select data-act="set-stage" data-id="${a.id}">${stageOpts(a.status)}</select></td>
+          <td>${esc(a.reference || '')}</td>
+          <td class="r num">${a.price != null && a.price !== '' ? esc(a.price) : ''}</td>
+          <td class="soft">${esc(a.note || '')}</td>
+          <td class="r"><button class="btn quiet small" data-act="del-allocation" data-id="${a.id}">Delete</button></td>
+        </tr>`).join('')}</tbody></table></div>`
+      : `<div class="panel empty"><h2>No batches here</h2><p>${state.allocations.size ? 'Nothing matches this filter.' : 'When you draft a list for a plant, add it here so the capacity shows as taken.'}</p></div>`}`;
+}
+
+/* ------------------------------------------------------------- offers */
+
+function capacityView() {
+  const rows = [...state.offers.values()].sort((a, b) => a.period.localeCompare(b.period) || plantName(a.plantId).localeCompare(plantName(b.plantId)));
+  return `
+    <div class="page-head">
+      <div>
+        <h1>Offered capacity</h1>
+        <p>What each plant told us it can take — the quantity, order type and month behind every bar on the board.</p>
+      </div>
+    </div>
+    <div class="panel panel-pad" style="margin-bottom:14px">
+      <form class="f-grid" data-form="offer">
+        ${fld('Plant', `<select name="plantId" required>${plantOpts('')}</select>`)}
+        ${fld('Order type', `<select name="orderType">${typeOpts('inline')}</select>`)}
+        ${fld('Month', `<input type="month" name="period" required value="${thisMonth()}" />`)}
+        ${fld('Quantity (m²)', '<input name="sqm" required placeholder="200000 or 200k" />')}
+        ${fld('Note', '<input name="note" placeholder="optional" />')}
+        <button class="btn solid" type="submit">Add offer</button>
+      </form>
+    </div>
+    ${rows.length ? `<div class="panel scroll"><table>
+      <thead><tr><th>Plant</th><th>Type</th><th>Month</th><th class="r">Offered</th><th>Note</th><th></th></tr></thead>
+      <tbody>${rows.map((o) => `
+        <tr>
+          <td>${esc(plantName(o.plantId))}</td>
+          <td><span class="chip">${typeName(o.orderType)}</span></td>
+          <td class="num">${esc(monthName(o.period))}</td>
+          <td class="r num">${sqmText(o.sqm)}</td>
+          <td class="soft">${esc(o.note || '')}</td>
+          <td class="r"><button class="btn quiet small" data-act="del-offer" data-id="${o.id}">Delete</button></td>
+        </tr>`).join('')}</tbody></table></div>`
+      : `<div class="panel empty"><h2>No offers recorded</h2><p>An offer is one plant's answer for one month and one order type — "Croatia, 200k m², inline, September".</p></div>`}`;
+}
+
+/* --------------------------------------------------------- production */
+
+function productionView() {
+  const all = productionRows().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const shown = all.slice(0, 300);
+  const total = all.reduce((s, r) => s + r.sqm, 0);
+
+  return `
+    <div class="page-head">
+      <div>
+        <h1>Orders at the plants</h1>
+        <p>Work already ordered, as it comes out of the plants' own export. ${sqmText(total)} across ${nf.format(all.length)} order${all.length === 1 ? '' : 's'}, loaded on the <button class="btn quiet small" data-act="go-import">Import</button> tab.</p>
+      </div>
+    </div>
+    ${state.batches.size ? `<div class="panel panel-pad" style="margin-bottom:14px">
+      <div class="eyebrow" style="margin-bottom:8px">Loads</div>
+      <div class="scroll"><table>
+        <thead><tr><th>Loaded</th><th>Source</th><th class="r">Rows</th><th class="r">Quantity</th><th></th></tr></thead>
+        <tbody>${[...state.batches.entries()].sort((a, b) => String(b[1].createdAt).localeCompare(String(a[1].createdAt))).map(([id, b]) => `
+          <tr>
+            <td class="num">${esc(new Date(b.createdAt).toLocaleString())}</td>
+            <td>${esc(b.label || 'Import')}</td>
+            <td class="r num">${(b.rows || []).length}</td>
+            <td class="r num">${sqmText((b.rows || []).reduce((s, r) => s + r.sqm, 0))}</td>
+            <td class="r"><button class="btn quiet small danger" data-act="del-batch" data-id="${id}">Remove load</button></td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+    </div>` : ''}
+    ${shown.length ? `<div class="panel scroll"><table>
+      <thead><tr><th>Due</th><th>Plant</th><th>Type</th><th class="r">Area</th><th>Job</th><th>Customer</th><th>Machine</th></tr></thead>
+      <tbody>${shown.map((r) => `
+        <tr>
+          <td class="num">${esc(r.date)}</td>
+          <td>${esc(plantName(r.plantId))}</td>
+          <td><span class="chip">${typeName(r.orderType)}</span></td>
+          <td class="r num">${sqmText(r.sqm)}</td>
+          <td class="num">${esc(r.reference || '')}</td>
+          <td>${esc(r.customer || '')}</td>
+          <td class="num faint">${esc(r.machine || '')}</td>
+        </tr>`).join('')}</tbody></table>
+      ${all.length > shown.length ? `<div class="panel-pad faint" style="font-size:12.5px">Showing the ${shown.length} most recent rows of ${nf.format(all.length)}.</div>` : ''}</div>`
+      : `<div class="panel empty"><h2>No orders loaded</h2><p>Import the file the plants send back and every bar on the board fills in.</p><button class="btn solid" data-act="go-import">Go to import</button></div>`}`;
+}
+
+/* -------------------------------------------------------------- plants */
+
+function plantsView() {
+  const rows = sortedPlants();
+  return `
+    <div class="page-head">
+      <div><h1>Plants</h1><p>The partner plants we can place work with.</p></div>
+      ${state.mode === 'local' ? `<div class="bar-strip">
+        <button class="btn" data-act="export-board">Export board</button>
+        <label class="btn">Restore from file<input type="file" id="restore-file" accept=".json" hidden /></label>
+      </div>` : ''}
+    </div>
+    <div class="panel panel-pad" style="margin-bottom:14px">
+      <form class="f-grid" data-form="plant">
+        ${fld('Name', '<input name="name" required placeholder="Croatia" />')}
+        ${fld('Country', '<input name="country" placeholder="Croatia" />')}
+        ${fld('Contact', '<input name="contact" placeholder="optional" />')}
+        ${fld('Note', '<input name="note" placeholder="optional" />')}
+        <button class="btn solid" type="submit">Add plant</button>
+      </form>
+    </div>
+    ${rows.length ? `<div class="panel scroll"><table>
+      <thead><tr><th>Plant</th><th>Country</th><th>Contact</th><th>Note</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows.map((p) => `
+        <tr>
+          <td>${esc(p.name)}</td>
+          <td>${esc(p.country || '')}</td>
+          <td>${esc(p.contact || '')}</td>
+          <td class="soft">${esc(p.note || '')}</td>
+          <td><span class="chip${p.active === false ? '' : ' stage-ordered'}">${p.active === false ? 'Inactive' : 'Active'}</span></td>
+          <td class="r">
+            <button class="btn quiet small" data-act="toggle-plant" data-id="${p.id}">${p.active === false ? 'Activate' : 'Deactivate'}</button>
+            <button class="btn quiet small danger" data-act="del-plant" data-id="${p.id}">Delete</button>
+          </td>
+        </tr>`).join('')}</tbody></table></div>`
+      : `<div class="panel empty"><h2>No plants yet</h2><p>Add the first plant that offered to take work.</p></div>`}`;
+}
+</script>
+
+<script>
+/* -------------------------------------------------------------- import */
+
+const CSV_PLACEHOLDER = 'plant,type,sqm,date,reference\nCroatia,inline,48000,2026-09-04,ORD-1043';
+
+/* --- the plants' schedule export ---------------------------------------
+   One sheet per machine, named "<machine code> <destination>", with two
+   header rows and data from the third. Several machines can sit at the
+   same destination and those sheets add up into one plant. Area is the
+   quantity and Due Date decides the month. There is no diecut/inline
+   column yet, so those jobs come in with the type left open. ----------- */
+
+const SHEET_FIELDS = {
+  area: ['area'],
+  reference: ['jobnumber'],
+  customer: ['customer'],
+  dueDate: ['duedate'],
+  orderType: ['type', 'ordertype', 'process'],
+};
+
+/** Find the header row and the columns we need, tolerating moved columns. */
+function readSheetLayout(grid) {
+  for (let h = 0; h < Math.min(grid.length, 12); h++) {
+    const top = (grid[h] || []).map(norm);
+    const sub = (grid[h + 1] || []).map(norm);
+    if (!top.includes('area')) continue;
+    const columns = {};
+    for (const [field, spellings] of Object.entries(SHEET_FIELDS)) {
+      for (let c = 0; c < top.length; c++) {
+        if (spellings.includes(top[c]) || spellings.includes(`${top[c]}${sub[c] || ''}`)) { columns[field] = c; break; }
+      }
+    }
+    if (columns.area !== undefined && columns.dueDate !== undefined) return { columns, firstRow: h + 2 };
+  }
+  return null;
+}
+
+const fromExcelSerial = (n) => new Date(Math.round((n - 25569) * 86400000));
+
+function cellDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.valueOf())) {
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  }
+  if (typeof value === 'number' && value > 20000 && value < 80000) return fromExcelSerial(value).toISOString().slice(0, 10);
+  return parseDate(value ?? '');
+}
+
+/** "8556 Romunija" is machine 8556 at the plant Romunija. */
+function splitSheetName(name) {
+  const m = String(name).trim().match(/^(\d{2,6})\s+(.*)$/);
+  return m ? { machine: m[1], plant: m[2].trim() } : { machine: '', plant: String(name).trim() };
+}
+
+function readWorkbook(book) {
+  const plants = new Map();
+  const skipped = [];
+  let scanned = 0;
+
+  for (const sheetName of book.SheetNames) {
+    const grid = XLSX.utils.sheet_to_json(book.Sheets[sheetName], { header: 1, raw: true, blankrows: false });
+    const { machine, plant } = splitSheetName(sheetName);
+    if (!grid.length) { skipped.push({ sheet: sheetName, why: 'the sheet is empty' }); continue; }
+
+    const layout = readSheetLayout(grid);
+    if (!layout) { skipped.push({ sheet: sheetName, why: 'no Area and Due Date columns found' }); continue; }
+
+    const { columns, firstRow } = layout;
+    const at = (row, field) => (columns[field] === undefined ? undefined : row[columns[field]]);
+    let kept = 0; let dropped = 0;
+
+    for (let i = firstRow; i < grid.length; i++) {
+      const row = grid[i] || [];
+      const area = Number(at(row, 'area'));
+      const date = cellDate(at(row, 'dueDate'));
+      if (!Number.isFinite(area) || area <= 0 || !date) {
+        if (row.some((c) => c !== undefined && String(c).trim() !== '')) dropped++;
+        continue;
+      }
+      scanned++; kept++;
+      if (!plants.has(plant)) plants.set(plant, { plant, machines: new Set(), rows: [] });
+      const entry = plants.get(plant);
+      entry.machines.add(machine || sheetName);
+      entry.rows.push({
+        orderType: parseType(at(row, 'orderType') ?? '') || UNSPEC,
+        date,
+        sqm: Math.round(area),
+        reference: at(row, 'reference') == null ? '' : String(at(row, 'reference')).trim(),
+        customer: at(row, 'customer') == null ? '' : String(at(row, 'customer')).trim(),
+        machine,
+      });
+    }
+    if (!kept) skipped.push({ sheet: sheetName, why: dropped ? `${dropped} rows had no usable Area or Due Date` : 'no data rows' });
+  }
+
+  const groups = [...plants.values()].map((p) => ({
+    ...p,
+    machines: [...p.machines],
+    sqm: p.rows.reduce((s, r) => s + r.sqm, 0),
+    months: [...new Set(p.rows.map((r) => r.date.slice(0, 7)))].sort(),
+  })).sort((a, b) => b.sqm - a.sqm);
+
+  return {
+    kind: 'workbook', committed: false, plants: groups, skipped, total: scanned,
+    sqm: groups.reduce((s, g) => s + g.sqm, 0),
+    untyped: groups.reduce((s, g) => s + g.rows.filter((r) => r.orderType === UNSPEC).length, 0),
+  };
+}
+
+async function readSpreadsheetFile(file) {
+  if (typeof XLSX === 'undefined') { toast('The spreadsheet reader did not load. Reload the page and try again.', true); return; }
+  try {
+    const book = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type: 'array', cellDates: true });
+    const report = readWorkbook(book);
+    if (!report.total) { toast('No usable rows found — the sheets need an Area and a Due Date column.', true); return; }
+    state.draft.report = report;
+    state.draft.csv = '';
+    render();
+  } catch (err) {
+    toast(`Could not read that file. ${err && err.message ? err.message : ''}`.trim(), true);
+  }
+}
+
+/* --- the simple CSV shape ---------------------------------------------- */
+
+function checkImport() {
+  const d = state.draft;
+  const text = d.csv.trim();
+  if (!text) { toast('Paste a file first, or choose one from disk.', true); return; }
+
+  const rows = parseCsv(text);
+  if (rows.length < 2) { toast('That needs a header row and at least one row of data.', true); return; }
+
+  const header = rows[0];
+  const columns = mapHeaders(header);
+  const missing = ['plant', 'sqm', 'date'].filter((f) => columns[f] === undefined);
+  if (missing.length) {
+    toast(`No column found for ${missing.join(', ')}. The header reads: ${header.join(', ')}`, true);
+    return;
+  }
+
+  const byName = new Map(sortedPlants().map((p) => [p.name.trim().toLowerCase(), p]));
+  const accepted = []; const errors = []; const newPlants = new Set();
+
+  rows.slice(1).forEach((cells, i) => {
+    const at = (f) => (columns[f] === undefined ? '' : (cells[columns[f]] ?? '').trim());
+    const name = at('plant');
+    const sqm = parseSqm(at('sqm'));
+    const date = parseDate(at('date'));
+    const orderType = parseType(at('orderType')) || d.defaultType || UNSPEC;
+    const problems = [];
+    if (!name) problems.push('no plant name');
+    if (!Number.isFinite(sqm) || sqm <= 0) problems.push(`unreadable quantity "${at('sqm')}"`);
+    if (!date) problems.push(`unreadable date "${at('date')}"`);
+    if (name && !byName.has(name.toLowerCase()) && !d.createPlants) problems.push(`no plant called "${name}" — tick the box below to create it`);
+    if (problems.length) { errors.push({ line: i + 2, problems, raw: cells.join(' | ') }); return; }
+    if (!byName.has(name.toLowerCase())) newPlants.add(name);
+    accepted.push({ name, orderType, date, sqm: Math.round(sqm), reference: at('reference') });
+  });
+
+  d.report = {
+    kind: 'csv', committed: false, total: rows.length - 1, accepted, errors,
+    newPlants: [...newPlants],
+    sqm: accepted.reduce((s, r) => s + r.sqm, 0),
+    untyped: accepted.filter((r) => r.orderType === UNSPEC).length,
+    columns: Object.fromEntries(Object.entries(columns).map(([k, v]) => [k, header[v]])),
+  };
+  render();
+}
+
+/* --- writing an import to the board ------------------------------------ */
+
+const BATCH_ROWS = 1200; // keeps each stored document well inside its size limit
+
+async function ensurePlant(name, byName) {
+  const key = name.trim().toLowerCase();
+  if (byName.has(key)) return byName.get(key);
+  const id = uid();
+  const plant = { name: name.trim(), country: '', contact: '', note: 'Added by import', active: true, createdAt: new Date().toISOString() };
+  byName.set(key, { ...plant, id });
+  await put('plants', id, plant);
+  return byName.get(key);
+}
+
+async function storeRows(rows, label) {
+  const stamp = new Date().toISOString();
+  for (let i = 0, part = 1; i < rows.length; i += BATCH_ROWS, part++) {
+    const chunk = rows.slice(i, i + BATCH_ROWS);
+    const parts = Math.ceil(rows.length / BATCH_ROWS);
+    await put('batches', uid(), {
+      label: parts > 1 ? `${label} (part ${part} of ${parts})` : label,
+      createdAt: stamp, rows: chunk,
+    });
+  }
+}
+
+async function commitImport() {
+  const r = state.draft.report;
+  if (!r) return;
+  const byName = new Map(sortedPlants().map((p) => [p.name.trim().toLowerCase(), p]));
+  const rows = [];
+
+  if (r.kind === 'workbook') {
+    for (const group of r.plants) {
+      const plant = await ensurePlant(group.plant, byName);
+      for (const row of group.rows) rows.push({ ...row, plantId: plant.id });
+    }
+    if (!rows.length) return;
+    await storeRows(rows, 'Schedule export');
+    toast(`Imported ${rows.length} jobs across ${r.plants.length} plants — ${sqmText(r.sqm)}`);
+  } else {
+    if (!r.accepted.length) return;
+    for (const row of r.accepted) {
+      const plant = await ensurePlant(row.name, byName);
+      rows.push({ plantId: plant.id, orderType: row.orderType, date: row.date, sqm: row.sqm, reference: row.reference });
+    }
+    await storeRows(rows, 'Import');
+    toast(`Imported ${rows.length} rows — ${sqmText(r.sqm)}`);
+  }
+
+  state.draft.report = { ...r, committed: true };
+  state.draft.csv = '';
+  render();
+}
+
+/* --- the import screen -------------------------------------------------- */
+
+function workbookReport(r) {
+  return `
+    <div class="panel panel-pad">
+      <div class="eyebrow" style="margin-bottom:9px">${r.committed ? 'Imported' : 'Preview — nothing saved yet'}</div>
+      <div class="rep"><span>Jobs read</span><b>${nf.format(r.total)}</b></div>
+      <div class="rep"><span>Total area</span><b>${sqmText(r.sqm)}</b></div>
+      <div class="rep"><span>Plants</span><b>${r.plants.length}</b></div>
+      ${r.untyped ? `<div class="rep"><span>Order type not given</span><b>${nf.format(r.untyped)} job${r.untyped === 1 ? '' : 's'}</b></div>` : ''}
+      <div class="scroll" style="margin-top:12px">
+        <table>
+          <thead><tr><th>Plant</th><th>Machines</th><th class="r">Jobs</th><th class="r">Area</th><th>Months</th></tr></thead>
+          <tbody>${r.plants.map((p) => `
+            <tr>
+              <td>${esc(p.plant)}</td>
+              <td class="num faint">${p.machines.map(esc).join(', ')}</td>
+              <td class="r num">${p.rows.length}</td>
+              <td class="r num">${sqmText(p.sqm)}</td>
+              <td class="num faint">${p.months.map((m) => esc(monthShort(m))).join(', ')}</td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      ${r.skipped.length ? `<ul class="errs">${r.skipped.map((sk) => `<li><b>${esc(sk.sheet)}</b> — skipped, ${esc(sk.why)}</li>`).join('')}</ul>` : ''}
+      ${!r.committed ? `<div class="row" style="margin-top:14px">
+        <button class="btn solid" data-act="commit-import">Import ${nf.format(r.total)} jobs</button>
+        <span class="faint" style="font-size:12.5px">Adds ${sqmText(r.sqm)} to the board.</span></div>` : ''}
+    </div>`;
+}
+
+function csvReport(r) {
+  return `
+    <div class="panel panel-pad">
+      <div class="eyebrow" style="margin-bottom:9px">${r.committed ? 'Imported' : 'Preview — nothing saved yet'}</div>
+      <div class="rep"><span>Rows read</span><b>${r.total}</b></div>
+      <div class="rep"><span>Accepted</span><b>${r.accepted.length}</b></div>
+      <div class="rep"><span>Rejected</span><b style="color:${r.errors.length ? 'var(--over)' : 'inherit'}">${r.errors.length}</b></div>
+      <div class="rep"><span>Total quantity</span><b>${sqmText(r.sqm)}</b></div>
+      ${r.newPlants.length ? `<div class="rep"><span>New plants</span><b>${r.newPlants.map(esc).join(', ')}</b></div>` : ''}
+      <div class="rep"><span>Columns matched</span><span class="faint mono" style="font-size:11.5px">${Object.entries(r.columns).map(([k, v]) => `${k}→${esc(v)}`).join('  ')}</span></div>
+      ${r.errors.length ? `<ul class="errs">${r.errors.slice(0, 40).map((e) => `<li><b>Line ${e.line}</b> — ${esc(e.problems.join('; '))}<br><span class="faint">${esc(e.raw)}</span></li>`).join('')}</ul>` : ''}
+      ${!r.committed && r.accepted.length ? `<div class="row" style="margin-top:14px">
+        <button class="btn solid" data-act="commit-import">Import ${r.accepted.length} rows</button>
+        <span class="faint" style="font-size:12.5px">Adds ${sqmText(r.sqm)} to the board.</span></div>` : ''}
+    </div>`;
+}
+
+function importView() {
+  const d = state.draft;
+  const r = d.report;
+  const report = !r
+    ? `<div class="panel empty"><h2>Nothing checked yet</h2><p>Choose the schedule file, or paste a simple CSV. You always see what would be imported before anything is saved.</p></div>`
+    : (r.kind === 'workbook' ? workbookReport(r) : csvReport(r));
+
+  return `
+    <div class="page-head">
+      <div>
+        <h1>Import orders</h1>
+        <p>Load the plants' schedule export straight from Excel, or paste a simple CSV. Nothing is saved until you confirm.</p>
+      </div>
+    </div>
+    <div class="import-grid">
+      <div class="panel panel-pad">
+        <div class="eyebrow" style="margin-bottom:7px">Schedule export (.xlsx)</div>
+        <input type="file" id="csv-file" accept=".xlsx,.xlsm,.csv,.txt,.tsv" />
+        <p class="faint" style="font-size:12.5px;margin:9px 0 0">
+          One sheet per machine, named like <code>8556 Romunija</code>; machines at the same place add up into one plant.
+          <b>Area</b> is the quantity and <b>Due Date</b> decides the month. Until the sheets carry a diecut/inline
+          column, those jobs arrive with the type left open and count towards the plant total.
+        </p>
+
+        <div class="eyebrow" style="margin:18px 0 7px">Or paste a CSV</div>
+        <textarea id="csv-text" rows="7" spellcheck="false" placeholder="${esc(CSV_PLACEHOLDER)}">${esc(d.csv)}</textarea>
+        <div class="row" style="margin-top:10px">
+          <label class="check"><input type="checkbox" id="mk-plants" ${d.createPlants ? 'checked' : ''} /> Create plants that don't exist yet</label>
+          <label class="check">Default type
+            <select id="def-type" style="width:auto">${opts([{ value: '', label: 'leave open' }, { value: 'diecut', label: 'Diecut' }, { value: 'inline', label: 'Inline' }], d.defaultType)}</select></label>
+          <span class="spacer"></span>
+          <button class="btn" data-act="check-import">Check CSV</button>
+        </div>
+      </div>
+      ${report}
+    </div>`;
+}
+
+/* ------------------------------------------------------------- example */
+
+const EXAMPLE = {
+  plants: [['Zagreb', 'Croatia'], ['Poznań', 'Poland'], ['Porto', 'Portugal'], ['İzmir', 'Türkiye']],
+  offers: [
+    ['Zagreb', 'inline', 0, 200000], ['Zagreb', 'diecut', 0, 60000], ['Zagreb', 'inline', 1, 180000],
+    ['Poznań', 'diecut', 0, 150000], ['Poznań', 'diecut', 1, 150000], ['Poznań', 'inline', 1, 80000],
+    ['Porto', 'inline', 0, 120000], ['Porto', 'inline', 1, 120000],
+    ['İzmir', 'diecut', 1, 300000], ['İzmir', 'inline', 1, 100000],
+  ],
+  allocations: [
+    ['Zagreb', 'inline', 0, 150000, 'ordered', 'List CRO-09A'],
+    ['Zagreb', 'inline', 1, 60000, 'sent', 'List CRO-10A'],
+    ['Poznań', 'diecut', 0, 140000, 'ordered', 'List PL-09'],
+    ['Poznań', 'diecut', 1, 90000, 'quoted', 'List PL-10'],
+    ['Porto', 'inline', 0, 135000, 'approved', 'List PT-09'],
+    ['İzmir', 'diecut', 1, 80000, 'list_prepared', 'List TR-10 draft'],
+    ['İzmir', 'inline', 1, 40000, 'rejected', 'Price too high'],
+  ],
+  production: [
+    ['Zagreb', 'inline', 0, 3, 48000], ['Zagreb', 'inline', 0, 11, 61500], ['Zagreb', 'diecut', 0, 17, 22000],
+    ['Poznań', 'diecut', 0, 8, 74200], ['Poznań', 'diecut', 0, 22, 53000], ['Porto', 'inline', 0, 15, 90000],
+  ],
+};
+
+/** Months are relative to today, so the example always lands on the board. */
+function monthOffset(n) {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  return d.toISOString().slice(0, 7);
+}
+
+async function loadExample() {
+  const ids = new Map();
+  for (const [name, country] of EXAMPLE.plants) {
+    const id = uid();
+    ids.set(name, id);
+    await put('plants', id, { name, country, contact: '', note: 'Example data', active: true, createdAt: new Date().toISOString() });
+  }
+  for (const [plant, orderType, m, sqm] of EXAMPLE.offers) {
+    await put('offers', uid(), { plantId: ids.get(plant), orderType, period: monthOffset(m), sqm, note: '', createdAt: new Date().toISOString() });
+  }
+  for (const [plant, orderType, m, sqm, status, reference] of EXAMPLE.allocations) {
+    await put('allocations', uid(), { plantId: ids.get(plant), orderType, period: monthOffset(m), sqm, status, reference, price: null, note: '', createdAt: new Date().toISOString() });
+  }
+  await put('batches', uid(), {
+    label: 'Example data', createdAt: new Date().toISOString(),
+    rows: EXAMPLE.production.map(([plant, orderType, m, day, sqm]) => ({
+      plantId: ids.get(plant), orderType, date: `${monthOffset(m)}-${String(day).padStart(2, '0')}`, sqm, reference: '',
+    })),
+  });
+  toast('Example data loaded — clear it any time from the Plants tab');
+}
+
+/* -------------------------------------------------------------- modals */
+
+const scrim = document.getElementById('scrim');
+const closeModal = () => { scrim.hidden = true; };
+
+function openModal(title, body) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  scrim.hidden = false;
+  document.getElementById('modal-body').querySelector('input, select')?.focus();
+}
+
+function batchModal(plantId) {
+  if (!state.plants.size) { toast('Add a plant first.', true); return; }
+  openModal('Add a batch to the pipeline', `
+    <form data-form="allocation" style="display:grid;gap:12px">
+      <div class="f-grid">
+        ${fld('Plant', `<select name="plantId" required>${plantOpts(plantId || '')}</select>`)}
+        ${fld('Order type', `<select name="orderType">${typeOpts('inline')}</select>`)}
+      </div>
+      <div class="f-grid">
+        ${fld('Month', `<input type="month" name="period" required value="${state.filter.period || thisMonth()}" />`)}
+        ${fld('Quantity (m²)', '<input name="sqm" required placeholder="150000 or 150k" />')}
+      </div>
+      <div class="f-grid">
+        ${fld('Stage', `<select name="status">${stageOpts('list_prepared')}</select>`)}
+        ${fld('Price', '<input name="price" placeholder="optional, e.g. 0.42" />')}
+      </div>
+      ${fld('Reference', '<input name="reference" placeholder="list name or order numbers" />')}
+      ${fld('Note', '<input name="note" placeholder="optional" />')}
+      <div class="acts"><button type="button" class="btn" data-act="close">Cancel</button><button type="submit" class="btn solid">Add to pipeline</button></div>
+    </form>`);
+}
+
+function offerModal(plantId) {
+  if (!state.plants.size) { toast('Add a plant first.', true); return; }
+  openModal('Record offered capacity', `
+    <form data-form="offer" style="display:grid;gap:12px">
+      <div class="f-grid">
+        ${fld('Plant', `<select name="plantId" required>${plantOpts(plantId || '')}</select>`)}
+        ${fld('Order type', `<select name="orderType">${typeOpts('inline')}</select>`)}
+      </div>
+      <div class="f-grid">
+        ${fld('Month', `<input type="month" name="period" required value="${state.filter.period || thisMonth()}" />`)}
+        ${fld('Quantity (m²)', '<input name="sqm" required placeholder="200000 or 200k" />')}
+      </div>
+      ${fld('Note', '<input name="note" placeholder="who told us, any conditions" />')}
+      <div class="acts"><button type="button" class="btn" data-act="close">Cancel</button><button type="submit" class="btn solid">Save offer</button></div>
+    </form>`);
+}
+
+function plantModal() {
+  openModal('Add a plant', `
+    <form data-form="plant" style="display:grid;gap:12px">
+      <div class="f-grid">
+        ${fld('Name', '<input name="name" required placeholder="Croatia" />')}
+        ${fld('Country', '<input name="country" placeholder="Croatia" />')}
+      </div>
+      <div class="f-grid">
+        ${fld('Contact', '<input name="contact" placeholder="optional" />')}
+        ${fld('Note', '<input name="note" placeholder="optional" />')}
+      </div>
+      <div class="acts"><button type="button" class="btn" data-act="close">Cancel</button><button type="submit" class="btn solid">Add plant</button></div>
+    </form>`);
+}
+</script>
+
+<script>
+/* -------------------------------------------------------------- render */
+
+const VIEWS = { board: boardView, pipeline: pipelineView, capacity: capacityView, production: productionView, plants: plantsView, import: importView };
+
+function render() {
+  document.querySelectorAll('.tab').forEach((tab) => {
+    if (tab.dataset.view === state.view) tab.setAttribute('aria-current', 'page');
+    else tab.removeAttribute('aria-current');
+  });
+  const host = document.getElementById('view');
+  const scrollTop = window.scrollY;
+  host.innerHTML = (VIEWS[state.view] || boardView)();
+  if (state.mode === 'local') {
+    const note = document.createElement('div');
+    note.className = 'notice quiet-notice';
+    note.innerHTML = '<div>Saved <strong>in this browser only</strong>. Colleagues opening this page get their own empty board — use <strong>Export board</strong> on the Plants tab to hand them a copy.</div>';
+    host.prepend(note);
+  } else if (state.mode === 'memory') {
+    const note = document.createElement('div');
+    note.className = 'notice';
+    note.innerHTML = '<div><strong>Nothing will be saved.</strong> This browser is blocking site data, so anything you enter is lost when the page reloads.</div>';
+    host.prepend(note);
+  }
+  window.scrollTo({ top: scrollTop });
+}
+
+function setConnection(kind, text) {
+  state.connection = kind;
+  const el = document.getElementById('conn');
+  el.className = `conn ${kind === 'live' ? 'live' : kind === 'offline' ? 'off' : kind === 'local' ? 'local' : ''}`;
+  document.getElementById('conn-text').textContent = text;
+}
+
+/* ------------------------------------------------------------ handlers */
+
+const num = (v) => {
+  const n = parseSqm(v);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+};
+
+const FORMS = {
+  plant(data) {
+    const name = (data.name || '').trim();
+    if (!name) return toast('The plant needs a name.', true);
+    if (sortedPlants().some((p) => p.name.toLowerCase() === name.toLowerCase())) return toast(`There is already a plant called "${name}".`, true);
+    put('plants', uid(), {
+      name, country: (data.country || '').trim(), contact: (data.contact || '').trim(),
+      note: (data.note || '').trim(), active: true, createdAt: new Date().toISOString(),
+    });
+    toast(`${name} added`);
+  },
+  offer(data) {
+    const sqm = num(data.sqm);
+    if (!sqm) return toast('Enter a quantity, for example 200000 or 200k.', true);
+    put('offers', uid(), {
+      plantId: data.plantId, orderType: data.orderType, period: data.period, sqm,
+      note: (data.note || '').trim(), createdAt: new Date().toISOString(),
+    });
+    toast(`Offer recorded — ${sqmText(sqm)}`);
+  },
+  allocation(data) {
+    const sqm = num(data.sqm);
+    if (!sqm) return toast('Enter a quantity, for example 150000 or 150k.', true);
+    put('allocations', uid(), {
+      plantId: data.plantId, orderType: data.orderType, period: data.period, sqm,
+      status: data.status, reference: (data.reference || '').trim(),
+      price: data.price ? Number(data.price) : null, note: (data.note || '').trim(),
+      createdAt: new Date().toISOString(),
+    });
+    toast(`${sqmText(sqm)} added to the pipeline`);
+  },
+};
+
+document.addEventListener('submit', (e) => {
+  const form = e.target.closest('form[data-form]');
+  if (!form) return;
+  e.preventDefault();
+  FORMS[form.dataset.form](Object.fromEntries(new FormData(form).entries()));
+  closeModal();
+  form.reset();
+});
+
+const ACTS = {
+  close: closeModal,
+  'add-plant': () => plantModal(),
+  'add-batch': (el) => batchModal(el.dataset.plant),
+  'add-offer': (el) => offerModal(el.dataset.plant),
+  'load-example': loadExample,
+  'export-board': () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([JSON.stringify(boardData(), null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `plant-load-board-${stamp}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    toast('Board exported');
+  },
+  'go-import': () => { state.view = 'import'; render(); },
+  'see-pipeline': (el) => { state.pipeFilter.plantId = el.dataset.plant; state.view = 'pipeline'; render(); },
+  'check-import': () => { readImportControls(); checkImport(); },
+  'commit-import': () => { readImportControls(); commitImport(); },
+  'del-allocation': (el) => confirmThen('Delete this batch from the pipeline?', () => drop('allocations', el.dataset.id)),
+  'del-offer': (el) => confirmThen('Delete this offer?', () => drop('offers', el.dataset.id)),
+  'del-batch': (el) => confirmThen('Remove this load and every order in it?', () => drop('batches', el.dataset.id)),
+  'toggle-plant': (el) => {
+    const p = state.plants.get(el.dataset.id);
+    patch('plants', el.dataset.id, { active: p.active === false });
+  },
+  'del-plant': (el) => {
+    const p = state.plants.get(el.dataset.id);
+    confirmThen(`Delete ${p.name}? Its offers, pipeline batches and orders go too.`, async () => {
+      for (const [id, o] of [...state.offers]) if (o.plantId === p.id) await drop('offers', id);
+      for (const [id, a] of [...state.allocations]) if (a.plantId === p.id) await drop('allocations', id);
+      for (const [id, b] of [...state.batches]) {
+        const rows = (b.rows || []).filter((r) => r.plantId !== p.id);
+        if (rows.length !== (b.rows || []).length) {
+          if (rows.length) await patch('batches', id, { rows });
+          else await drop('batches', id);
+        }
+      }
+      await drop('plants', p.id);
+      toast(`${p.name} deleted`);
+    });
+  },
+};
+
+function confirmThen(question, run) {
+  if (window.confirm(question)) run();
+}
+
+function readImportControls() {
+  const text = document.getElementById('csv-text');
+  const mk = document.getElementById('mk-plants');
+  const dt = document.getElementById('def-type');
+  if (text) state.draft.csv = text.value;
+  if (mk) state.draft.createPlants = mk.checked;
+  if (dt) state.draft.defaultType = dt.value;
+}
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'SELECT') return;
+  e.preventDefault();
+  ACTS[el.dataset.act]?.(el);
+});
+
+document.addEventListener('change', async (e) => {
+  const el = e.target;
+  if (el.dataset.act === 'set-stage') {
+    await patch('allocations', el.dataset.id, { status: el.value });
+    toast(`Moved to "${stageLabel(el.value)}"`);
+  } else if (el.dataset.filter) {
+    state.filter[el.dataset.filter] = el.value;
+    render();
+  } else if (el.dataset.pipe) {
+    state.pipeFilter[el.dataset.pipe] = el.value;
+    render();
+  } else if (el.id === 'restore-file' && el.files && el.files[0]) {
+    const text = await el.files[0].text();
+    let data = null;
+    try { data = JSON.parse(text); } catch { data = null; }
+    if (!data || !KINDS.some((k) => Array.isArray(data[k]))) return toast('That file is not a board export.', true);
+    const records = KINDS.reduce((n, k) => n + (data[k] || []).length, 0);
+    if (!confirm(`Replace everything on this board with the ${records} records in that file?`)) return;
+    applyBoardData(data);
+    saveLocal();
+    toast('Board restored');
+    render();
+  } else if (el.id === 'csv-file' && el.files && el.files[0]) {
+    const file = el.files[0];
+    state.draft.report = null;
+    if (/\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)) {
+      await readSpreadsheetFile(file);
+    } else {
+      state.draft.csv = await file.text();
+      render();
+    }
+  }
+});
+
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'csv-text') state.draft.csv = e.target.value;
+});
+
+document.getElementById('tabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  state.view = tab.dataset.view;
+  render();
+});
+
+document.getElementById('modal-x').addEventListener('click', closeModal);
+scrim.addEventListener('mousedown', (e) => { if (e.target === scrim) closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+/* ------------------------------------------------------------- startup */
+
+render();
+
+/**
+ * The store arrives after the first paint, so the board renders empty
+ * first and fills in when the subscriptions deliver.
+ */
+(async function connect() {
+  let db = null;
+  try {
+    db = await claude.use('db');
+  } catch (err) {
+    db = null;
+  }
+  if (!db) {
+    state.mode = 'local';
+    if (loadLocal()) setConnection('local', 'This browser');
+    else { state.mode = 'memory'; setConnection('offline', 'Not saved'); }
+    render();
+    return;
+  }
+  state.mode = 'shared';
+  state.db = db;
+
+  const watch = (kind) => db.collection(COLLECTIONS[kind]).onSnapshot(
+    (snap) => {
+      const next = new Map();
+      for (const doc of snap.docs) next.set(doc.id, { ...doc.data(), id: doc.id });
+      state[kind] = next;
+      if (state.connection !== 'live') setConnection('live', 'Shared board');
+      render();
+    },
+    (err) => {
+      setConnection('offline', 'Not syncing');
+      toast(storeMessage(err, 'Lost the connection to the shared board'), true);
+      render();
+    },
+  );
+
+  for (const kind of Object.keys(COLLECTIONS)) watch(kind);
+})();
+</script>
+
+
+</body>
+</html>
